@@ -18,4 +18,8 @@
 
               # This loop iterates through the chacters of the input string and stores each character on the stack until it reaches the null character
               Loop1:
-              
+                      add $t1, $t0, $s0            # Get the current character's address
+                      lb $t2, 0($t1)               # Load register $t2 with the current character
+                      addi $sp, $sp, -1            # Move the stack pointer down to make room for character in the stack
+                      sb $t2, 0($sp)               # Store the current character unto the stack
+                      addi $t0, $t0, 1             # Increment counter to go to the next character 
