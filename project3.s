@@ -13,6 +13,11 @@
               li $a1, 1001                         # Read maximum of 1001 characters from user input (including null character)
               syscall
 
+              lb $s1, null_char
+              lb $s2, nl_char
+              lb $s3, space_char
+              lb $s4, tab_char
+
               la $s0, input_str                    # Load register with address of user input
               add $t0, $zero, $zero                # Initialize counter to zero
 
@@ -20,6 +25,8 @@
               Loop1:
                       add $t1, $t0, $s0            # Get the current character's address
                       lb $t2, 0($t1)               # Load register $t2 with the current character
+                      beq $t2, $s2, EndString      # If current char is the newline character, go to end string (do allocate space in stack)
+                      beq $t2, $s1, EndString      # If current char is the null character, go to end string (do allocate space in stack)
                       addi $sp, $sp, -1            # Move the stack pointer down to make room for character in the stack
                       sb $t2, 0($sp)               # Store the current character unto the stack
-                      addi $t0, $t0, 1             # Increment counter to go to the next character 
+                      addi $t0, $t0, 1             # Increment counter to go to the next character
