@@ -17,6 +17,7 @@
               lb $s2, nl_char
               lb $s3, space_char
               lb $s4, tab_char
+              lb $s5, comma_char                # Load register $s5 with char corresponding to a comma
 
               la $s0, input_str                    # Load register with address of user input
               add $t0, $zero, $zero                # Initialize counter to zero
@@ -60,7 +61,6 @@
         # Strings are split into substrings by using a single comma as the delimiter. If there is no comma, the while string is considered a substring
         SubprogramA:
                   addi $t4, $ra, 0                  # Store the return address into main in register $t4
-                  lb $s5, comma_char                # Load register $s5 with char corresponding to a comma
                   addi $s6, $sp, 0                  # Initialize register $s6 to start from $sp
                   addi $t0, $zero, $zero            # Intialize counter to keep track of start of substring
 
@@ -81,13 +81,39 @@
                   beq $t1, $s1, Return1             # If the current char is the null char, return to main
                   addi $s6, $s6, 1                  # Add 1 to $s6 to move to next char after comma for processing the next substring
                   lb $t1, 0($s6)                    # Load $t1 with next character
-                  beq $t1, $s1, Invalid             # If a null char comes right after a comma, the string is empty and Invalid
+                  beq $t1, $s1, InvalidSubstr       # If a null char comes right after a comma, the string is empty and Invalid
 
 
                   jal SubProgramB
 
-
+        # SubProgramB processes each substring that is on the stack. It returns the decimal value of a valid substring or a value of -1 if substring is invalud
         SubProgramB:
+                  # This loop is used to check for leading spaces and eliminates them by adjusting the start index of the string appropriately
+                  Loop4:
+                        #add $t1, $t5, $zero                  # Get the current character's address
+                        lb $t2, 0($t5)                       # Load register $t2 with the current character
+                        #beq $t2, $s1, PrintInvalid          # If current char is the null char, the string is empty. Therefore, invalid
+                        #beq $t2, $s2, PrintInvalid          # If current char is the newline char, the string is empty. Therefore, invalid
+                        bne $t2, $s3, CheckTab               # If the current char is not a space character, go to subroutine to check if it's a tab
+                        beq $t5, $sp, InvalidSubstr          # If current $t5 is at $sp then all chars are spaces/tabs. Go to InvalidSubStr
+                        addi $t5, $t5, -1                    # If the current char is a space, increment $t5 in stack to check next character
+                        j Loop4                              # Jump back to beginning of the loop
+
+                  # Checks if the current chacter is a tab only when it is not a space
+                  CheckTab:
+                        bne $t2, $s4, SetStartIndex          # If the current char is not a tab, then set char as the start index
+                        beq $t5, $sp, InvalidSubstr          # If current $t5 is at $sp then all chars are spaces/tabs. Go to InvalidSubStr
+                        addi $t5, $t5, -1                    # Else, increment the $t5 register to check for spaces and/or tabs in the next character in stack
+                        j Loop4                              # Jump back to Loop1 to check next character
+
+                  # This subroutine sets the start index after looping through all leading spaces and tabs
+                  SetStartIndex:
+                        add $t5, $zero, $zero                # $t5 is now the first non-space/tab char in the substring
+                        #add $t3, $s5, $zero                  # Move start index to register $t3 to use as counter in Loop2
+                        j Loop5                              # Jump to loop 2 to check for the end of the string
 
 
-        Invalid: 
+                  Loop5:
+
+
+                  InvalidSubstr: 
