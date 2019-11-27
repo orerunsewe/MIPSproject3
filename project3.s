@@ -95,14 +95,14 @@
                         #beq $t2, $s1, PrintInvalid          # If current char is the null char, the string is empty. Therefore, invalid
                         #beq $t2, $s2, PrintInvalid          # If current char is the newline char, the string is empty. Therefore, invalid
                         bne $t2, $s3, CheckTab               # If the current char is not a space character, go to subroutine to check if it's a tab
-                        beq $t5, $sp, InvalidSubstr          # If current $t5 is at $sp then all chars are spaces/tabs. Go to InvalidSubStr
+                        beq $t5, $sp, InvalidSubstr          # If current $t5 is at $sp then all chars are spaces/tabs. Go to InvalidSubstr
                         addi $t5, $t5, -1                    # If the current char is a space, increment $t5 in stack to check next character
                         j Loop4                              # Jump back to beginning of the loop
 
                   # Checks if the current chacter is a tab only when it is not a space
                   CheckTab:
                         bne $t2, $s4, SetStartIndex          # If the current char is not a tab, then set char as the start index
-                        beq $t5, $sp, InvalidSubstr          # If current $t5 is at $sp then all chars are spaces/tabs. Go to InvalidSubStr
+                        beq $t5, $sp, InvalidSubstr          # If current $t5 is at $sp then all chars are spaces/tabs. Go to InvalidSubstr
                         addi $t5, $t5, -1                    # Else, increment the $t5 register to check for spaces and/or tabs in the next character in stack
                         j Loop4                              # Jump back to Loop1 to check next character
 
@@ -143,7 +143,27 @@
                       bgt $t0, $t1, InvalidSubstr           # If the difference is greater than 3, there are more than 4 chars. Go to InvalidSubstr
                       j Initialize
 
+                  # Initialize registers to be used to calculate decimal value of substring
                   Initialize:
-                                          
+                  add $t0, $zero, 1                         # Initialize $t3 to 1. Will be incremented by x30 i
+                  addi $t1, $zero, 30                       # Load register $t7 with immediate 30 for calculations
+                  add $s7, $zero, $zero                     # Initialize register $s7 for sum to calculate decimal value
+                  j Loop6 
+
+                  # Loop through each character in  a valid substring and calculates its decimal value
+                  Loop6:
+                  #add $t7, $t6, $zero                      # Start reading characters for conversion from the end index in register $t6
+                  lb $a0, 0($t6)                            # Load register $a2 with current character starting from character at end index $t6
+                  jal SubprogramC                           # Jump to SubprogramC to convert current char then return to next instruction
+                  mult $t0, $v1                             # Multiply decimal value of char by 30^n where n char position starting from the right at 0
+                  mflo $t7                                  # Move result from multiplication to the $t7 register
+                  add $s7, $s7, $t7                         # Add result to the sum
+                  mult $t0, $t1                             # Multiply by 30 for the multiplication of the next char (30^(n+1))
+                  mflo $t0                                  # Move 30^(n+1) to $t0
+                  beq $t5, $t6, PrintDecimal                # If the start index equal to the end index, all chars have been converted. Print the Decimal Value
+                  addi $t6, $t6, 1                          # Increment end index by 1 for next char in stack
+                  j Loop6                                   # Restart Loop6
+
+
 
                   InvalidSubstr:
