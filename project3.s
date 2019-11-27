@@ -148,7 +148,7 @@
                   add $t0, $zero, 1                         # Initialize $t3 to 1. Will be incremented by x30 i
                   addi $t1, $zero, 30                       # Load register $t7 with immediate 30 for calculations
                   add $s7, $zero, $zero                     # Initialize register $s7 for sum to calculate decimal value
-                  j Loop6 
+                  j Loop6
 
                   # Loop through each character in  a valid substring and calculates its decimal value
                   Loop6:
@@ -164,6 +164,32 @@
                   addi $t6, $t6, 1                          # Increment end index by 1 for next char in stack
                   j Loop6                                   # Restart Loop6
 
+      # SubprogramC is used to convert the string characters to their corresponding decimal values, treating each character as a base-N number
+      # Conversions done based on formula N = 26 + (X % 11) where X is my StudentID: 02805400
+      # N = 30 so valid range is from 'a' to 't' or 'A' to 'T'
+      # Characters '0' to '9' correspond to a decimal value of 0 to 9 respectively
+      # Characters 'a' to 't' correspond to a decimal value of 10 to 29 respectively
+      # Characters 'A' to 'T' correspond to a decimal value of 10 to 29 respectively
+      # All other characters are out of range and correspond to a decimal value 0
+      # Register $a0 contains current character in the string
+      SubprogramC:
+      add $t2, $zero, $a0                       # Copy character at $a0 to temporary register $t2
+      addi $t3, $zero, 87                       # Load $t3 with reference value 87 (ascii value of 'a' - 10) for conversion
+      bgt $t2, 't', InvalidSubstr               # If current character is greater than 't', it is out of range
+      bge $t2, 'a', Return1                     # If current character is between 'a' and 't', go to Return1 to convert
+      addi $t3, $zero, 55                       # Change reference value to 55 for uppercase characters
+      bgt $t2, 'T', InvalidSubstr               # If current character is greater than 'T', it is out of range. Go to InvalidSubstr
+      bge $t2, 'A', Return1                     # If current character is between 'A' and 'T', go to Return1 to convert
+      addi $t3, $zero, 48                       # Change reference value to 48 for numbers
+      bgt $t2, '9', InvalidSubstr               # If current character is greater than '9' it is out of range. Go to InvalidSubstr
+      bge $t2, '0', Return1                     # If current char is between '0' and '9', go to Return1 to convert
+      blt $t2, '0', InvalidSubstr               # For all other characters out of the range, go to InvalidSubstr
+
+                # This subroutine calculates the decimal value of the character
+                # The result is returned in $v0
+                Return1:
+                sub $v0, $t2, $t3         # subtract the the reference value in $t3 from the character's 1-byte ascii value
+                jr $ra                    # Return the decimal value in $v1 to Loop4
 
 
                   InvalidSubstr:
