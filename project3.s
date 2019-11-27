@@ -160,9 +160,22 @@
                   add $s7, $s7, $t7                         # Add result to the sum
                   mult $t0, $t1                             # Multiply by 30 for the multiplication of the next char (30^(n+1))
                   mflo $t0                                  # Move 30^(n+1) to $t0
-                  beq $t5, $t6, PrintDecimal                # If the start index equal to the end index, all chars have been converted. Print the Decimal Value
+                  beq $t5, $t6, DecimalValue                # If the start index equal to the end index, all chars have been converted. Print the Decimal Value
                   addi $t6, $t6, 1                          # Increment end index by 1 for next char in stack
                   j Loop6                                   # Restart Loop6
+
+                  # Return -1 if the substring is invalid
+                  InvalidSubstr:
+                  addi $s7, $zero, -1                       # Load $s7 with -1 if substring is invalid
+                  j StoreValue
+
+                  # Print the decimal value of a valid substring
+                  DecimalValue:
+                  add $s7, $s7, $zero                       # The sum in the $s7 register is the decimal value
+                  j StoreValue                              # Jump to StoreValue
+
+                  StoreValue:
+                  
 
       # SubprogramC is used to convert the string characters to their corresponding decimal values, treating each character as a base-N number
       # Conversions done based on formula N = 26 + (X % 11) where X is my StudentID: 02805400
@@ -188,8 +201,5 @@
                 # This subroutine calculates the decimal value of the character
                 # The result is returned in $v0
                 Return1:
-                sub $v0, $t2, $t3         # subtract the the reference value in $t3 from the character's 1-byte ascii value
-                jr $ra                    # Return the decimal value in $v1 to Loop4
-
-
-                  InvalidSubstr:
+                sub $v0, $t2, $t3         # Subtract the the reference value in $t3 from the character's 1-byte ascii value
+                jr $ra                    # Return the decimal value in $v1 to Loop6
