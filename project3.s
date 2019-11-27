@@ -112,7 +112,7 @@
                         #add $t3, $s5, $zero                 # Move start index to register $t3 to use as counter in Loop2
                         j StoreSP
 
-                  # Store stack pointer in register 
+                  # Store stack pointer in register
                   StoreSP:
                         add $t6, $sp, $zero                  # Store $sp in $t6 so $sp is not tampered with
                         j Loop5
@@ -136,5 +136,14 @@
                       j CheckValidLength                    # Jump to CheckValidLength
 
 
+                  # This subroutine checks if the length of the substring is valid (not more than 4 characters)
+                  CheckValidLength:
+                      addi, $t1, $zero, 3                   # Initalize $t1 register to equal 3
+                      sub $t0, $t5, $t6                     # Check the difference between start index and end index
+                      bgt $t0, $t1, InvalidSubstr           # If the difference is greater than 3, there are more than 4 chars. Go to InvalidSubstr
+                      j Initialize
+
+                  Initialize:
+                                          
 
                   InvalidSubstr:
