@@ -50,7 +50,7 @@
                       beq $t1, $s0, PassString     # If current char is the first char in string, go to Passstring (all characters have been loaded to stack)
                       addi $sp, $sp, -1            # Move the stack pointer down to make room for character in the stack
                       sb $t2, 0($sp)               # Store the current character unto the stack
-                      addi $t3, $t3, -1             # Increment counter to go to the next character
+                      addi $t3, $t3, -1            # Increment counter to go to the next character
                       j Loop2                      # Jump back to Loop1
 
               PassString:
@@ -90,7 +90,7 @@
         SubProgramB:
                   # This loop is used to check for leading spaces and eliminates them by adjusting the start index of the string appropriately
                   Loop4:
-                        #add $t1, $t5, $zero                  # Get the current character's address
+                        #add $t1, $t5, $zero                 # Get the current character's address
                         lb $t2, 0($t5)                       # Load register $t2 with the current character
                         #beq $t2, $s1, PrintInvalid          # If current char is the null char, the string is empty. Therefore, invalid
                         #beq $t2, $s2, PrintInvalid          # If current char is the newline char, the string is empty. Therefore, invalid
@@ -106,14 +106,35 @@
                         addi $t5, $t5, -1                    # Else, increment the $t5 register to check for spaces and/or tabs in the next character in stack
                         j Loop4                              # Jump back to Loop1 to check next character
 
-                  # This subroutine sets the start index after looping through all leading spaces and tabs
+                  # Set the start index after looping through all leading spaces and tabs
                   SetStartIndex:
                         add $t5, $zero, $zero                # $t5 is now the first non-space/tab char in the substring
-                        #add $t3, $s5, $zero                  # Move start index to register $t3 to use as counter in Loop2
-                        j Loop5                              # Jump to loop 2 to check for the end of the string
+                        #add $t3, $s5, $zero                 # Move start index to register $t3 to use as counter in Loop2
+                        j StoreSP
 
+                  # Store stack pointer in register 
+                  StoreSP:
+                        add $t6, $sp, $zero                  # Store $sp in $t6 so $sp is not tampered with
+                        j Loop5
 
+                  # This loop removes trailing spaces and tab chars in substring
                   Loop5:
+                        lb $t2, 0($t6)                       # Load the register with the last char in the string
+                        bne $t2, $s3, CheckTab2              # If current char is not a space char, check if it is a tab char
+                        addi $t6, $t6, 1                     # Increment last char in string by 1 to keep checking for non space/tab char
+                        j Loop5                              # Restart Loop
+
+                  # Checks if the current char is a tab if it is not a space. Used for eliminating trailing tabs
+                  CheckTab2:
+                      bne $t2, $s4, SetEndIndex             # If current char is also not a tab, set as end index for string
+                      addi $t6, $t6, 1                      # Increment register storing the end of the string by 1
+                      j Loop5                               # Jump back to Loop5
+
+                  # Sets the end index after looping through all trailing spaces and tabs
+                  SetEndIndex:
+                      add $s6, $t6, $zero                   # Store the end index in register $s6
+                      j CheckValidLength                    # Jump to CheckValidLength
 
 
-                  InvalidSubstr: 
+
+                  InvalidSubstr:
