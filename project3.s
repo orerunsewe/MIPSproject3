@@ -21,17 +21,31 @@
               la $s0, input_str                    # Load register with address of user input
               add $t0, $zero, $zero                # Initialize counter to zero
 
-              # This subroutine checks for the index of the last character in the string by checking for the null or newline characters
+              # This loop checks for the index of the last character in the string by checking for the null or newline characters
               Loop1:
                   add $t1, $t0, $s0                    # Get current char's address starting from first char in input str
                   lb $t2, 0($t1)                       # Load register $t2 with the current char
                   beq $t2, $s1, StringEnd              # If the current char is the null char, go to StringEnd
                   beq $t2, $s2, StringEnd              # If the current char is the newline char, go to StringEnd
-                  addi $t3, $t3, 1                     # Increment counter to check next character
+                  addi $t0, $t0, 1                     # Increment counter to check next character
                   j Loop1                              # Restart Loop
 
+              # This loop keeps track of the end of string
+              StringEnd:
+                  add $t3, $t0, $zero                  # Load the $t3 register with the index at the end of string
+                  addi $t3, $t3, -1                    # Subtract by -1 to get char that is not null/nl
+                  j StackTop                           # Jump to StackTop
 
-              # This loop iterates through the chacters of the input string and stores each character on the stack until it reaches the null character
+              # Store the top of the stack with the null char to know when all chars in user input have been processed
+              StackTop:
+                  addi $sp, $sp, -1                   # Allocate space in the stack
+                  sb $s1, 0($sp)                      # Store the null character
+                  j Loop2                             # Jump to loop 2 to load characters onto the stack
+
+
+
+
+              # This loop iterates through the chacters of the input string from the end to start and stores each character on the stack
               Loop2:
                       add $t1, $t0, $s0            # Get the current character's address
                       lb $t2, 0($t1)               # Load register $t2 with the current character
