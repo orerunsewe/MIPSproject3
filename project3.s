@@ -5,7 +5,7 @@
         space_char:       .byte       32                     # Allocate byte in memory for space char
         tab_char:         .byte       9                      # Allocate byte in memory for tab char
         nl_char:          .byte       10                     # Allocate byte in memory for newline char
-
+        comma_char:       .byte       44                     # Allocate byte in memory for space char
 .text
         main:
               li $v0, 8                            # Systemcall to get the user's input
@@ -42,27 +42,39 @@
                   sb $s1, 0($sp)                      # Store the null character
                   j Loop2                             # Jump to loop 2 to load characters onto the stack
 
-
-
-
               # This loop iterates through the chacters of the input string from the end to start and stores each character on the stack
               Loop2:
-                      add $t1, $t0, $s0            # Get the current character's address
+                      add $t1, $t3, $s0            # Get the current character's address
                       lb $t2, 0($t1)               # Load register $t2 with the current character
-                      beq $t2, $s2, PassString     # If current char is the newline character, go to PassString (do allocate space in stack)
-                      beq $t2, $s1, PassString     # If current char is the null character, go to Passstring (do allocate space in stack)
+                      beq $t1, $s0, PassString     # If current char is the first char in string, go to Passstring (all characters have been loaded to stack)
                       addi $sp, $sp, -1            # Move the stack pointer down to make room for character in the stack
                       sb $t2, 0($sp)               # Store the current character unto the stack
-                      addi $t0, $t0, 1             # Increment counter to go to the next character
+                      addi $t3, $t3, -1             # Increment counter to go to the next character
                       j Loop2                      # Jump back to Loop1
 
               PassString:
                       jal SubprogramA              # Pass the whole user input string to SubprogramA via stack
 
 
-
+        # SubprogramA processes the string that has been placed on the stack
+        # Strings are split into substrings by using a single comma as the delimiter. If there is no comma, the while string is considered a substring
         SubprogramA:
-                  addi $t3, $ra, 0
+                  addi $t4, $ra, 0                  # Store the return address into main in register $t4
+                  lb $s5, comma_char                # Load register $s5 with char corresponding to a comma
+                  addi $s6, $sp, 0                  # Register $s5 loops from $sp till a comma
+                  addi $t0, $zero, $zero            # Intialize counter to keep track of start of substring
+
+                  # This gets the next substring from the input string in the stack and loads it into a higher address in the stack
+                  Loop3:
+                  lb $t1, 0($s6)
+                  beq $t1, $s5, SubString
+                  beq $t1, $s1, SubString
+                  sb $t1, 0($sp) 
+
+
+                  Substring:
+
+
 
                   jal SubProgramB
 
