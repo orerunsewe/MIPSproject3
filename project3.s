@@ -61,22 +61,33 @@
         SubprogramA:
                   addi $t4, $ra, 0                  # Store the return address into main in register $t4
                   lb $s5, comma_char                # Load register $s5 with char corresponding to a comma
-                  addi $s6, $sp, 0                  # Register $s5 loops from $sp till a comma
+                  addi $s6, $sp, 0                  # Initialize register $s6 to start from $sp
                   addi $t0, $zero, $zero            # Intialize counter to keep track of start of substring
 
                   # This gets the next substring from the input string in the stack and loads it into a higher address in the stack
                   Loop3:
-                  lb $t1, 0($s6)
-                  beq $t1, $s5, SubString
-                  beq $t1, $s1, SubString
-                  sb $t1, 0($sp) 
-
+                  lb $t1, 0($s6)                    # Load $t1 with character at $s6
+                  beq $t1, $s5, SubString           # Check if current char in substring is a comma
+                  beq $t1, $s1, Substring           # Check if current char in substring is the null char
+                  addi $sp, $sp, -1                 # Make room in stack to store the current char in the substring
+                  sb $t1, 0($sp)                    # Store the current char in the stack
+                  addi $s6, $s6, 1                  # Increment $s6 to get the the next char in substring
+                  addi, $t0, $t0, 1                 # Incremement $t0 to get start of substring
+                  j Loop3                           # Jump back to Loop3
 
                   Substring:
-
+                  addi $t0, $t0, -1                 # Subtract 1 from counter to get right position for start index of substring
+                  add $t5, $sp, $t0                 # Add $t0 to $sp to get start index of the substring. Substring is now from $t5 to $sp
+                  beq $t1, $s1, Return1             # If the current char is the null char, return to main
+                  addi $s6, $s6, 1                  # Add 1 to $s6 to move to next char after comma for processing the next substring
+                  lb $t1, 0($s6)                    # Load $t1 with next character
+                  beq $t1, $s1, Invalid             # If a null char comes right after a comma, the string is empty and Invalid
 
 
                   jal SubProgramB
 
 
         SubProgramB:
+
+
+        Invalid: 
