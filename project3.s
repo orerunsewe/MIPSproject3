@@ -8,7 +8,8 @@
         comma_char:       .byte       44                     # Allocate byte in memory for space char
 
         # Allocate space in memory for an array to store decimal values of substrings. The worst case space needed is (501x4 = 2004) when all substrings in input are of length one
-        dec_array:        .align 2    .space      2004
+        dec_array:        .align      2
+                          .space      2004
 .text
         main:
               li $v0, 8                            # Systemcall to get the user's input
@@ -58,9 +59,42 @@
 
               PassString:
                       jal SubprogramA              # Pass the whole user input string to SubprogramA via stack
+                      j InitializeMain
+
+              InitializeMain:
+                      addi $t1, $zero, -1
+                      add $s0, $sp, $zero
+                      add $s0, $s0, $t9
+                      j PrintValues
 
               PrintValues:
-                      lw $t0, 
+                      lw $t0, 0($s0)
+                      beq $t0, $t1, PrintNaN
+                      j PrintNum
+
+              PrintNaN:
+                      or $a0, $s0, 0
+                      li $v0, 4
+                      syscall
+                      j PrintComma
+
+              PrintNum:
+                      or $a0, $s0, 0
+                      li $v0, 1
+                      syscall
+                      j PrintComma
+
+              PrintComma:
+                      beq $s0, $sp, Exit
+                      addi $s0, $s0, -4
+                      la $a0, comma_char
+                      li $v0, 11
+                      syscall
+                      j PrintValues
+
+              Exit:
+                      li, $v0, 10
+                      syscall
 
 
         # SubprogramA processes the string that has been placed on the stack
@@ -71,16 +105,16 @@
 
                   InitializeA1:
                   addi $t4, $ra, 0                  # Store the return address into main in register $t4
-                  addi $t9, $zero, $zero            # Initialize counter
+                  add $t9, $zero, $zero             # Initialize counter
 
                   Start:
                   addi $s6, $sp, 0                  # Initialize register $s6 to start from $sp
-                  addi $t0, $zero, $zero            # Intialize counter to keep track of start of substring
+                  add $t0, $zero, $zero             # Intialize counter to keep track of start of substring
 
                   # This gets the next substring from the input string in the stack and loads it into a higher address in the stack
                   Loop3:
                   lb $t1, 0($s6)                    # Load $t1 with character at $s6
-                  beq $t1, $s5, SubString           # Check if current char in substring is a comma
+                  beq $t1, $s5, Substring           # Check if current char in substring is a comma
                   beq $t1, $s1, Substring           # Check if current char in substring is the null char
                   addi $sp, $sp, -1                 # Make room in stack to store the current char in the substring
                   sb $t1, 0($sp)                    # Store the current char in the stack
@@ -106,7 +140,7 @@
                   addi $t9, $t9, 4                  # Increment counter by 4 to store next decimal value
                   add $sp, $s6, $zero               # Move stack pointer to next substring to be processed
                   lb $s6, 0($s6)                    # Load $s6 with char at $s6
-                  beq $s6, $s1, InitializeA2           # If $t2 is null char, the top of the stack has been reached so it is the last substring. Go to LoadStack
+                  beq $s6, $s1, InitializeA2        # If $t2 is null char, the top of the stack has been reached so it is the last substring. Go to LoadStack
                   j Start
 
                   InitializeA2:
@@ -216,9 +250,9 @@
 
                   # Return -1 if the substring is invalid
                   InvalidSubstr:
-                  addi $s7, $zero, -1                       # Load $s7 with -1 if substring is invalid
+                  addi $s7, $zero, 255                       # Load $s7 with -1 if substring is invalid
                   add $sp, $t5, $zero                       # Move $sp to start of substring to unload substring from stack
-                  sw $s7, 0($sp)                            # Store decimal value -1 on the stack to return to SubprogramA (indicates NaN)
+                  sw $s7, 0($sp)                            # Store decimal value 255 on the stack to return to SubprogramA (indicates NaN)
                   sub $sp, $sp, 4                           # Move $sp to validate other bytes in the word
                   jr $t8                                    # Return to SubprogramA
 
@@ -229,6 +263,11 @@
                   sw $s7, 0($sp)                            # Store decimal value of the substring to the stack
                   sub $sp, $sp, 4                           # Move $sp to validate other bytes in the word
                   jr $t8                                    # Return to SubprogramA
+
+                  sb $s7, 0($sp) 
+                  srl $s7, $s7, 8
+                  add $sp, $sp, -1
+                  sb $s7, 1($sp)
 
 
       # SubprogramC is used to convert the string characters to their corresponding decimal values, treating each character as a base-N number
