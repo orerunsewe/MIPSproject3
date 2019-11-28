@@ -81,16 +81,47 @@
                   Substring:
                   addi $t0, $t0, -1                 # Subtract 1 from counter to get right position for start index of substring
                   add $t5, $sp, $t0                 # Add $t0 to $sp to get start index of the substring. Substring is now from $t5 to $sp
-                  beq $t1, $s1, JumpToSPB           # If the current char is the null char, return to main
+                  beq $t1, $s1, JumpToSPB           # If the current char is the null char, jump to SubProgramB to convert substring
                   addi $s6, $s6, 1                  # Add 1 to $s6 to move to next char after comma for processing the next substring
                   lb $t1, 0($s6)                    # Load $t1 with next character
                   beq $t1, $s1, InvalidSubstr       # If a null char comes right after a comma, the string is empty and Invalid
 
                   JumpToSPB:
                   jal SubProgramB
+                  j
+
+                  # Initalize registers to be used in storing decimal value
+                  InitializeReg:
+                  add $t9, $zero, $zero                     # Initalize counter to zero
+                  la $s0, dec_array                         # Load address of array in memory to keep the decimal values of substrings as words
+                  j StoreValue
+
+                  # This stores the decimal values of all substrings into memory
+                  StoreValue:
+                  lb $t2, 0($s6)                            # Load current character into register $t2
+                  add $t1, $t9, $s0                         # Current index in array to write to
+                  sw $s7, 0($t1)                            # Store decimal value of substring as a word into the array at index
+                  addi $t9, $t9, 4                          # Increment counter by +4 to store next word (i.e. decimal number)
+                  beq $t2, $s1, AppendNull                  # If $t2 is null char, the top of the stack has been reached so it is the last substring
+                  j SubProgramB                             # Else jump back to start SubProgramB to begin processing next substring
+
+                  AppendNull:
+                  add $t1, $t9, $s0                         # Current index in array to write to
+                  sb $s1, 0(t1)                             # Store the null char at the end
+
+                  jr $ra
+
+
 
         # SubProgramB processes each substring that is on the stack. It returns the decimal value of a valid substring or a value of -1 if substring is invalud
         SubProgramB:
+
+                  j StoreReturnB
+
+                  StoreReturnB:
+                  addi $t8, $ra, 0
+                  j Loop4
+
                   # This loop is used to check for leading spaces and eliminates them by adjusting the start index of the string appropriately
                   Loop4:
                         #add $t1, $t5, $zero                 # Get the current character's address
@@ -149,14 +180,14 @@
                   # Initialize registers to be used to calculate decimal value of substring
                   Initialize:
                   add $t0, $zero, 1                         # Initialize $t3 to 1. Will be incremented by x30 i
-                  addi $t1, $zero, 30                       # Load register $t7 with immediate 30 for calculations
+                  addi $t1, $zero, 30                       # Load register $t1 with immediate 30 for calculations
                   add $s7, $zero, $zero                     # Initialize register $s7 for sum to calculate decimal value
                   j Loop6
 
                   # Loop through each character in  a valid substring and calculates its decimal value
                   Loop6:
                   #add $t7, $t6, $zero                      # Start reading characters for conversion from the end index in register $t6
-                  lb $a0, 0($t6)                            # Load register $a2 with current character starting from character at end index $t6
+                  lb $a0, 0($t6)                            # Load register $a0 with current character starting from character at end index $t6
                   jal SubprogramC                           # Jump to SubprogramC to convert current char then return to next instruction
                   mult $t0, $v1                             # Multiply decimal value of char by 30^n where n char position starting from the right at 0
                   mflo $t7                                  # Move result from multiplication to the $t7 register
@@ -170,24 +201,16 @@
                   # Return -1 if the substring is invalid
                   InvalidSubstr:
                   addi $s7, $zero, -1                       # Load $s7 with -1 if substring is invalid
-                  j InitializeReg
+                  add $sp, $t5, $zero                       # Move $sp to start of substring to unload substring from stack
+                  sw $s7, 0($sp)
 
                   # Print the decimal value of a valid substring
                   DecimalValue:
                   add $s7, $s7, $zero                       # The sum in the $s7 register is the decimal value
                   j InitializeReg                           # Jump to InitializeReg
 
-                  InitializeReg:
-                  add $t0, $zero, $zero
-                  j StoreValue
 
 
-                  StoreValue:
-                  lb $t2, 0($s6)
-                  add $t1, $t0, $s0
-                  sw $s7, 0($t1)
-                  addi $t0, $t0, 4
-                  beq $t2, $s1, AppendNull
 
 
       # SubprogramC is used to convert the string characters to their corresponding decimal values, treating each character as a base-N number
