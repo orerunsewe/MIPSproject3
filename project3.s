@@ -1,4 +1,7 @@
 .data
+        # Allocate space in memory for an array to store decimal values of substrings. The worst case space needed is (501x4 = 2004) when all substrings in input are of length one
+        dec_array:        .align      2
+                          .space      2004
         input_str:        .space      1001                   # Preallocate space for 1000 characters and the null string
         invalid:          .asciiz     "NaN"        # Store and null-terminate the string to be printed for invalid inputs
         null_char:        .byte       0                      # Allocate byte in memory for null char
@@ -7,9 +10,7 @@
         nl_char:          .byte       10                     # Allocate byte in memory for newline char
         comma_char:       .byte       44                     # Allocate byte in memory for space char
 
-        # Allocate space in memory for an array to store decimal values of substrings. The worst case space needed is (501x4 = 2004) when all substrings in input are of length one
-        dec_array:        .align      2
-                          .space      2004
+
 .text
         main:
               li $v0, 8                            # Systemcall to get the user's input
@@ -58,36 +59,53 @@
                       j Loop2                      # Jump back to Loop1
 
               PassString:
+                      addi $sp, $sp, -1            # Move the stack pointer down to make room for character in the stack
+                      sb $t2, 0($sp)               # Store the current character unto the stack
                       jal SubprogramA              # Pass the whole user input string to SubprogramA via stack
                       j InitializeMain
 
               InitializeMain:
-                      addi $t1, $zero, -1
+                      addi $t0, $zero, 255
                       add $s0, $sp, $zero
-                      add $s0, $s0, $t9
+                      #add $s0, $s0, $t9
+                      add $sp, $sp, $t9
+                      addi $sp, $sp, -4
                       j PrintValues
 
               PrintValues:
-                      lw $t0, 0($s0)
-                      beq $t0, $t1, PrintNaN
+                      #lw $t0, 0($s0)
+                      lbu $t2, 0($sp)
+                      sll $t2, $t2, 8
+                      lbu $t1, 1($sp)
+                      or $t2, $t2, $t1
+                      sll $t2, $t2, 8
+                      lbu $t1, 2($sp)
+                      or $t2, $t2, $t1
+                      sll $t2, $t2, 8
+                      lbu $t1, 3($sp)
+                      or $t2, $t2, $t1
+
+                      beq $t0, $t2, PrintNaN
                       j PrintNum
 
               PrintNaN:
-                      or $a0, $s0, 0
+                      la $a0, invalid
                       li $v0, 4
                       syscall
                       j PrintComma
 
               PrintNum:
-                      or $a0, $s0, 0
+                      or $a0, $t2, 0
                       li $v0, 1
                       syscall
                       j PrintComma
 
               PrintComma:
+                      #addi $s0, $s0, -4
                       beq $s0, $sp, Exit
-                      addi $s0, $s0, -4
-                      la $a0, comma_char
+                      addi $sp, $sp, -4
+                      #beq $s0, $sp, Exit
+                      lb $a0, comma_char
                       li $v0, 11
                       syscall
                       j PrintValues
@@ -127,15 +145,31 @@
                   add $t5, $sp, $t0                 # Add $t0 to $sp to get start index of the substring. Substring is now from $t5 to $sp
                   beq $t1, $s1, JumpToSPB           # If the current char is the null char, jump to SubProgramB to convert substring
                   addi $s6, $s6, 1                  # Add 1 to $s6 to move to next char after comma for processing the next substring
-                  lb $t1, 0($s6)                    # Load $t1 with next character
+                  lbu $t1, 0($s6)                    # Load $t1 with next character
                   beq $t1, $s1, InvalidSubstr       # If a null char comes right after a comma, the string is empty and Invalid
+                  #j Start
 
                   JumpToSPB:
                   jal SubProgramB
 
                   # This stores the decimal values of all substrings into memory
                   StoreValue2:
-                  lw $t2, 4($sp)                    # Load $t2 with the decimal value
+                  #lw $t2, 4($sp)                    # Load $t2 with the decimal value
+                  lbu $t2, 0($sp)
+                  sll $t2, $t2, 8
+                  lbu $t1, 1($sp)
+                  or $t2, $t2, $t1
+                  sll $t2, $t2, 8
+                  lbu $t1, 2($sp)
+                  or $t2, $t2, $t1
+                  sll $t2, $t2, 8
+                  lbu $t1, 3($sp)
+                  or $t2, $t2, $t1
+
+                  #or $a0, $t2, 0
+                  #li $v0, 1
+                  #syscall
+
                   sw $t2, dec_array($t9)            # Store the decimal value in the array at index marked by counter in $t9
                   addi $t9, $t9, 4                  # Increment counter by 4 to store next decimal value
                   add $sp, $s6, $zero               # Move stack pointer to next substring to be processed
@@ -144,18 +178,42 @@
                   j Start
 
                   InitializeA2:
-                  addi $t2, $t2, 0
-                  addi $t1, $t1, 0
+                  #addi $t2, $zero, 0
+                  addi $t1, $zero, 0
                   j LoadStack
 
                   # This loop loads the decimal values into the stack
                   LoadStack:
-                  add $t2, $t2, 4
+                  #add $t2, $t2, 4
                   lw $t0, dec_array($t1)
-                  sw $t0, 0($sp)
                   sub $sp, $sp, 4
-                  beq $t2, $t9, JumpToMain
+                  sb $t0, 3($sp)
+                  srl $t0, $s7, 8
+                  sb $t0, 2($sp)
+                  srl $t0, $s7, 8
+                  sb $t0, 1($sp)
+                  srl $t0, $s7, 8
+                  sb $t0, 0($sp)
+                  #sw $t0, 0($sp)
+                  #sub $sp, $sp, 4
+
+                  #lbu $t0, 0($sp)
+                  #sll $t0, $t0, 8
+                  #lbu $s0, 1($sp)
+                  #or $t0, $t0, $s0
+                  #sll $t0, $t0, 8
+                  #lbu $s0, 2($sp)
+                  #or $s0, $t0, $s0
+                  #sll $t0, $t0, 8
+                  #lbu $s0, 3($sp)
+                  #or $t0, $t0, $s0
+
+                  #or $a0, $t0, 0
+                  #li $v0, 1
+                  #syscall
+
                   add $t1, $t1, 4
+                  beq $t1, $t9, JumpToMain
                   j LoadStack
 
                   JumpToMain:
@@ -192,18 +250,18 @@
 
                   # Set the start index after looping through all leading spaces and tabs
                   SetStartIndex:
-                        add $t5, $zero, $zero                # $t5 is now the first non-space/tab char in the substring
+                        add $t5, $t5, $zero                # $t5 is now the first non-space/tab char in the substring
                         #add $t3, $s5, $zero                 # Move start index to register $t3 to use as counter in Loop2
                         j StoreSP
 
                   # Store stack pointer in register
                   StoreSP:
-                        add $t6, $sp, $zero                  # Store $sp in $t6 so $sp is not tampered with
+                        add $t6, $sp, $zero                  # Store $sp in $t6 sso $sp is not tampered with
                         j Loop5
 
                   # This loop removes trailing spaces and tab chars in substring
                   Loop5:
-                        lb $t2, 0($t6)                       # Load the register with the last char in the string
+                        lbu $t2, 0($t6)                       # Load the register with the last char in the string
                         bne $t2, $s3, CheckTab2              # If current char is not a space char, check if it is a tab char
                         addi $t6, $t6, 1                     # Increment last char in string by 1 to keep checking for non space/tab char
                         j Loop5                              # Restart Loop
@@ -239,7 +297,7 @@
                   #add $t7, $t6, $zero                      # Start reading characters for conversion from the end index in register $t6
                   lb $a0, 0($t6)                            # Load register $a0 with current character starting from character at end index $t6
                   jal SubprogramC                           # Jump to SubprogramC to convert current char then return to next instruction
-                  mult $t0, $v1                             # Multiply decimal value of char by 30^n where n char position starting from the right at 0
+                  mult $t0, $v0                             # Multiply decimal value of char by 30^n where n char position starting from the right at 0
                   mflo $t7                                  # Move result from multiplication to the $t7 register
                   add $s7, $s7, $t7                         # Add result to the sum
                   mult $t0, $t1                             # Multiply by 30 for the multiplication of the next char (30^(n+1))
@@ -252,22 +310,43 @@
                   InvalidSubstr:
                   addi $s7, $zero, 255                       # Load $s7 with -1 if substring is invalid
                   add $sp, $t5, $zero                       # Move $sp to start of substring to unload substring from stack
-                  sw $s7, 0($sp)                            # Store decimal value 255 on the stack to return to SubprogramA (indicates NaN)
-                  sub $sp, $sp, 4                           # Move $sp to validate other bytes in the word
+                  sub $sp, $sp, 4
+                  sb $s7, 3($sp)
+                  srl $s7, $s7, 8
+                  sb $s7, 2($sp)
+                  srl $s7, $s7, 8
+                  sb $s7, 1($sp)
+                  srl $s7, $s7, 8
+                  sb $s7, 0($sp)
+                  #sw $s7, 0($sp)                            # Store decimal value 255 on the stack to return to SubprogramA (indicates NaN)
+                  #sub $sp, $sp, 4                           # Move $sp to validate other bytes in the word
                   jr $t8                                    # Return to SubprogramA
 
                   # Print the decimal value of a valid substring
                   DecimalValue:
                   add $s7, $s7, $zero                       # The sum in the $s7 register is the decimal value
                   add $sp, $t5, $zero                       # Move $sp to start of substring to unload substring from stack
-                  sw $s7, 0($sp)                            # Store decimal value of the substring to the stack
-                  sub $sp, $sp, 4                           # Move $sp to validate other bytes in the word
-                  jr $t8                                    # Return to SubprogramA
-
-                  sb $s7, 0($sp) 
+                  sub $sp, $sp, 4
+                  sb $s7, 3($sp)
                   srl $s7, $s7, 8
-                  add $sp, $sp, -1
+                  sb $s7, 2($sp)
+                  srl $s7, $s7, 8
                   sb $s7, 1($sp)
+                  srl $s7, $s7, 8
+                  sb $s7, 0($sp)
+                  #sb $s7, 0($sp)
+                  #srl $s7, $s7, 8
+                  #add $sp, $sp, -1
+                  #sb $s7, 0($sp)
+                  #srl $s7, $s7, 8
+                  #add $sp, $sp, -1
+                  #sb $s7, 0($sp)
+                  #srl $s7, $s7, 8
+                  #add $sp, $sp, -1
+                  #sb $s7, 0($sp)
+                  #sw $s7, 0($sp)                            # Store decimal value of the substring to the stack
+                  #sub $sp, $sp, 4                           # Move $sp to validate other bytes in the word
+                  jr $t8                                    # Return to SubprogramA
 
 
       # SubprogramC is used to convert the string characters to their corresponding decimal values, treating each character as a base-N number
