@@ -1,6 +1,6 @@
 .data
         input_str:        .space      1001                   # Preallocate space for 1000 characters and the null string
-        invalid:          .asciiz     "Invalid Input"        # Store and null-terminate the string to be printed for invalid inputs
+        invalid:          .asciiz     "NaN"        # Store and null-terminate the string to be printed for invalid inputs
         null_char:        .byte       0                      # Allocate byte in memory for null char
         space_char:       .byte       32                     # Allocate byte in memory for space char
         tab_char:         .byte       9                      # Allocate byte in memory for tab char
@@ -63,9 +63,14 @@
         # SubprogramA processes the string that has been placed on the stack
         # Strings are split into substrings by using a single comma as the delimiter. If there is no comma, the while string is considered a substring
         SubprogramA:
-                  addi $t4, $ra, 0                  # Store the return address into main in register $t4
-                  addi $t9, $zero, $zero
 
+                  j InitializeA1
+
+                  InitializeA1:
+                  addi $t4, $ra, 0                  # Store the return address into main in register $t4
+                  addi $t9, $zero, $zero            # Initialize counter
+
+                  Start:
                   addi $s6, $sp, 0                  # Initialize register $s6 to start from $sp
                   addi $t0, $zero, $zero            # Intialize counter to keep track of start of substring
 
@@ -93,11 +98,26 @@
 
                   # This stores the decimal values of all substrings into memory
                   StoreValue2:
-                  lw $t2, 0($sp)
-                  sw $t2, dec_array($t9)
-                  addi $t9, $t9, 1
-                  beq $t2, $s1, LoadStack
-                  j JumpToSPB
+                  lw $t2, 4($sp)                    # Load $t2 with the decimal value
+                  sw $t2, dec_array($t9)            # Store the decimal value in the array at index marked by counter in $t9
+                  addi $t9, $t9, 4                  # Increment counter by 4 to store next decimal value
+                  add $sp, $s6, $zero               # Move stack pointer to next substring to be processed
+                  lb $s6, 0($s6)                    # Load $s6 with char at $s6
+                  beq $s6, $s1, LoadStack           # If $t2 is null char, the top of the stack has been reached so it is the last substring. Go to LoadStack
+                  j Start
+
+                  # This loop loads the decimal values into the stack
+                  LoadStack:
+                  add $t2, $t2, 4
+                  lw $t0, dec_array($t1)
+                  sw $t0, 0($sp)
+                  sub $sp, $sp, 4
+                  beq $t2, $t9, JumpToMain
+                  add $t1, $t1, 4
+                  j LoadStack
+
+
+
 
 
 
@@ -219,6 +239,7 @@
                   addi $s7, $zero, -1                       # Load $s7 with -1 if substring is invalid
                   add $sp, $t5, $zero                       # Move $sp to start of substring to unload substring from stack
                   sw $s7, 0($sp)                            # Store decimal value -1 on the stack to return to SubprogramA (indicates NaN)
+                  sub $sp, $sp, 4                           # Move $sp to validate other bytes in the word
                   jr $t8                                    # Return to SubprogramA
 
                   # Print the decimal value of a valid substring
@@ -226,6 +247,7 @@
                   add $s7, $s7, $zero                       # The sum in the $s7 register is the decimal value
                   add $sp, $t5, $zero                       # Move $sp to start of substring to unload substring from stack
                   sw $s7, 0($sp)                            # Store decimal value of the substring to the stack
+                  sub $sp, $sp, 4                           # Move $sp to validate other bytes in the word
                   jr $t8                                    # Return to SubprogramA
 
 
