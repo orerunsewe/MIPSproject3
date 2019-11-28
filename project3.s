@@ -7,8 +7,8 @@
         nl_char:          .byte       10                     # Allocate byte in memory for newline char
         comma_char:       .byte       44                     # Allocate byte in memory for space char
 
-        # Allocate space in memory to store decimal values of substrings. The worst case space needed is ((501x4)+1) when all substrings in input are of length one and a null str char
-        dec_array:        .space      2005
+        # Allocate space in memory for an array to store decimal values of substrings. The worst case space needed is (501x4 = 2004) when all substrings in input are of length one
+        dec_array:        .align 2    .space      2004
 .text
         main:
               li $v0, 8                            # Systemcall to get the user's input
@@ -64,6 +64,8 @@
         # Strings are split into substrings by using a single comma as the delimiter. If there is no comma, the while string is considered a substring
         SubprogramA:
                   addi $t4, $ra, 0                  # Store the return address into main in register $t4
+                  addi $t9, $zero, $zero
+
                   addi $s6, $sp, 0                  # Initialize register $s6 to start from $sp
                   addi $t0, $zero, $zero            # Intialize counter to keep track of start of substring
 
@@ -88,26 +90,40 @@
 
                   JumpToSPB:
                   jal SubProgramB
-                  j
-
-                  # Initalize registers to be used in storing decimal value
-                  InitializeReg:
-                  add $t9, $zero, $zero                     # Initalize counter to zero
-                  la $s0, dec_array                         # Load address of array in memory to keep the decimal values of substrings as words
-                  j StoreValue
 
                   # This stores the decimal values of all substrings into memory
-                  StoreValue:
-                  lb $t2, 0($s6)                            # Load current character into register $t2
-                  add $t1, $t9, $s0                         # Current index in array to write to
-                  sw $s7, 0($t1)                            # Store decimal value of substring as a word into the array at index
-                  addi $t9, $t9, 4                          # Increment counter by +4 to store next word (i.e. decimal number)
-                  beq $t2, $s1, AppendNull                  # If $t2 is null char, the top of the stack has been reached so it is the last substring
-                  j SubProgramB                             # Else jump back to start SubProgramB to begin processing next substring
+                  StoreValue2:
+                  lw $t2, 0($sp)
+                  sw $t2, dec_array($t9)
+                  addi $t9, $t9, 1
+                  beq $t2, $s1, LoadStack
+                  j JumpToSPB
 
-                  AppendNull:
-                  add $t1, $t9, $s0                         # Current index in array to write to
-                  sb $s1, 0(t1)                             # Store the null char at the end
+
+
+
+
+                  # Initalize registers to be used in storing decimal value
+                  #InitializeReg:
+                  #add $t9, $zero, $zero                     # Initalize counter to zero
+                  #la $s0, dec_array                         # Load address of array in memory to keep the decimal values of substrings as words
+                  #j StoreValue
+
+
+
+
+                  # This stores the decimal values of all substrings into memory
+                  #StoreValue:
+                  #lb $t2, 0($s6)                            # Load current character into register $t2
+                  #add $t1, $t9, $s0                         # Current index in array to write to
+                  #sw $s7, 0($t1)                            # Store decimal value of substring as a word into the array at index
+                  #addi $t9, $t9, 4                          # Increment counter by +4 to store next word (i.e. decimal number)
+                  #beq $t2, $s1, AppendNull                  # If $t2 is null char, the top of the stack has been reached so it is the last substring
+                  #j SubProgramB                             # Else jump back to start SubProgramB to begin processing next substring
+
+                  #AppendNull:
+                  #add $t1, $t9, $s0                         # Current index in array to write to
+                  #sb $s1, 0(t1)                             # Store the null char at the end
 
                   jr $ra
 
