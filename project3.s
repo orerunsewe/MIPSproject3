@@ -6,6 +6,9 @@
         tab_char:         .byte       9                      # Allocate byte in memory for tab char
         nl_char:          .byte       10                     # Allocate byte in memory for newline char
         comma_char:       .byte       44                     # Allocate byte in memory for space char
+
+        # Allocate space in memory to store decimal values of substrings. The worst case space needed is ((501x4)+1) when all substrings in input are of length one and a null str char
+        dec_array:        .space      2005
 .text
         main:
               li $v0, 8                            # Systemcall to get the user's input
@@ -78,12 +81,12 @@
                   Substring:
                   addi $t0, $t0, -1                 # Subtract 1 from counter to get right position for start index of substring
                   add $t5, $sp, $t0                 # Add $t0 to $sp to get start index of the substring. Substring is now from $t5 to $sp
-                  beq $t1, $s1, Return1             # If the current char is the null char, return to main
+                  beq $t1, $s1, JumpToSPB           # If the current char is the null char, return to main
                   addi $s6, $s6, 1                  # Add 1 to $s6 to move to next char after comma for processing the next substring
                   lb $t1, 0($s6)                    # Load $t1 with next character
                   beq $t1, $s1, InvalidSubstr       # If a null char comes right after a comma, the string is empty and Invalid
 
-
+                  JumpToSPB:
                   jal SubProgramB
 
         # SubProgramB processes each substring that is on the stack. It returns the decimal value of a valid substring or a value of -1 if substring is invalud
@@ -132,7 +135,7 @@
 
                   # Sets the end index after looping through all trailing spaces and tabs
                   SetEndIndex:
-                      add $s6, $t6, $zero                   # Store the end index in register $s6
+                      add $t6, $t6, $zero                   # Store the end index in register $t6
                       j CheckValidLength                    # Jump to CheckValidLength
 
 
@@ -167,15 +170,25 @@
                   # Return -1 if the substring is invalid
                   InvalidSubstr:
                   addi $s7, $zero, -1                       # Load $s7 with -1 if substring is invalid
-                  j StoreValue
+                  j InitializeReg
 
                   # Print the decimal value of a valid substring
                   DecimalValue:
                   add $s7, $s7, $zero                       # The sum in the $s7 register is the decimal value
-                  j StoreValue                              # Jump to StoreValue
+                  j InitializeReg                           # Jump to InitializeReg
+
+                  InitializeReg:
+                  add $t0, $zero, $zero
+                  j StoreValue
+
 
                   StoreValue:
-                  
+                  lb $t2, 0($s6)
+                  add $t1, $t0, $s0
+                  sw $s7, 0($t1)
+                  addi $t0, $t0, 4
+                  beq $t2, $s1, AppendNull
+
 
       # SubprogramC is used to convert the string characters to their corresponding decimal values, treating each character as a base-N number
       # Conversions done based on formula N = 26 + (X % 11) where X is my StudentID: 02805400
