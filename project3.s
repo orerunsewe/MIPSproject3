@@ -202,12 +202,15 @@
                   InvalidSubstr:
                   addi $s7, $zero, -1                       # Load $s7 with -1 if substring is invalid
                   add $sp, $t5, $zero                       # Move $sp to start of substring to unload substring from stack
-                  sw $s7, 0($sp)
+                  sw $s7, 0($sp)                            # Store decimal value -1 on the stack to return to SubprogramA (indicates NaN)
+                  jr $t8                                    # Return to SubprogramA
 
                   # Print the decimal value of a valid substring
                   DecimalValue:
                   add $s7, $s7, $zero                       # The sum in the $s7 register is the decimal value
-                  j InitializeReg                           # Jump to InitializeReg
+                  add $sp, $t5, $zero                       # Move $sp to start of substring to unload substring from stack
+                  sw $s7, 0($sp)                            # Store decimal value of the substring to the stack
+                  jr $t8                                    # Return to SubprogramA
 
 
 
