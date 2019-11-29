@@ -110,6 +110,7 @@
                       syscall
                       j PrintValues
 
+              # syscall to exit program 
               Exit:
                       li, $v0, 10
                       syscall
