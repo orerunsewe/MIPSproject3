@@ -85,6 +85,8 @@
                       lbu $t1, 3($sp)
                       or $t2, $t2, $t1
 
+
+
                       beq $t0, $t2, PrintNaN
                       j PrintNum
 
@@ -145,7 +147,7 @@
                   add $t5, $sp, $t0                 # Add $t0 to $sp to get start index of the substring. Substring is now from $t5 to $sp
                   beq $t1, $s1, JumpToSPB           # If the current char is the null char, jump to SubProgramB to convert substring
                   addi $s6, $s6, 1                  # Add 1 to $s6 to move to next char after comma for processing the next substring
-                  lbu $t1, 0($s6)                    # Load $t1 with next character
+                  lb $t1, 0($s6)                    # Load $t1 with next character
                   beq $t1, $s1, InvalidSubstr       # If a null char comes right after a comma, the string is empty and Invalid
                   #j Start
 
@@ -188,11 +190,11 @@
                   lw $t0, dec_array($t1)
                   sub $sp, $sp, 4
                   sb $t0, 3($sp)
-                  srl $t0, $s7, 8
+                  srl $t0, $t0, 8
                   sb $t0, 2($sp)
-                  srl $t0, $s7, 8
+                  srl $t0, $t0, 8
                   sb $t0, 1($sp)
-                  srl $t0, $s7, 8
+                  srl $t0, $t0, 8
                   sb $t0, 0($sp)
                   #sw $t0, 0($sp)
                   #sub $sp, $sp, 4
@@ -203,7 +205,7 @@
                   #or $t0, $t0, $s0
                   #sll $t0, $t0, 8
                   #lbu $s0, 2($sp)
-                  #or $s0, $t0, $s0
+                  #or $t0, $t0, $s0
                   #sll $t0, $t0, 8
                   #lbu $s0, 3($sp)
                   #or $t0, $t0, $s0
