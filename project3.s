@@ -3,7 +3,7 @@
         dec_array:        .align      2
                           .space      2004
         input_str:        .space      1001                   # Preallocate space for 1000 characters and the null string
-        invalid:          .asciiz     "NaN"        # Store and null-terminate the string to be printed for invalid inputs
+        invalid:          .asciiz     "NaN"                  # Store and null-terminate the string to be printed for invalid inputs
         null_char:        .byte       0                      # Allocate byte in memory for null char
         space_char:       .byte       32                     # Allocate byte in memory for space char
         tab_char:         .byte       9                      # Allocate byte in memory for tab char
@@ -110,7 +110,7 @@
                       syscall
                       j PrintValues
 
-              # syscall to exit program 
+              # syscall to exit program
               Exit:
                       li, $v0, 10
                       syscall
