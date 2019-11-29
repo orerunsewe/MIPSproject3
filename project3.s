@@ -67,13 +67,13 @@
               InitializeMain:
                       addi $t0, $zero, 255
                       add $s0, $sp, $zero
-                      #add $s0, $s0, $t9
                       add $sp, $sp, $t9
                       addi $sp, $sp, -4
                       j PrintValues
 
+              # Loop through values to print either the decimal value or "NaN" if invalid
               PrintValues:
-                      #lw $t0, 0($s0)
+                      # Load decimal value from stack byte-by-byte
                       lbu $t2, 0($sp)
                       sll $t2, $t2, 8
                       lbu $t1, 1($sp)
@@ -84,29 +84,27 @@
                       sll $t2, $t2, 8
                       lbu $t1, 3($sp)
                       or $t2, $t2, $t1
-
-
-
                       beq $t0, $t2, PrintNaN
                       j PrintNum
 
+              # syscall to print if invalid
               PrintNaN:
                       la $a0, invalid
                       li $v0, 4
                       syscall
                       j PrintComma
 
+              # syscall to print valid decimal values
               PrintNum:
                       or $a0, $t2, 0
                       li $v0, 1
                       syscall
                       j PrintComma
 
+              # syscall to print commas inbetween values. Exits at last substring.
               PrintComma:
-                      #addi $s0, $s0, -4
                       beq $s0, $sp, Exit
                       addi $sp, $sp, -4
-                      #beq $s0, $sp, Exit
                       lb $a0, comma_char
                       li $v0, 11
                       syscall
@@ -149,14 +147,13 @@
                   addi $s6, $s6, 1                  # Add 1 to $s6 to move to next char after comma for processing the next substring
                   lb $t1, 0($s6)                    # Load $t1 with next character
                   beq $t1, $s1, InvalidSubstr       # If a null char comes right after a comma, the string is empty and Invalid
-                  #j Start
 
                   JumpToSPB:
                   jal SubProgramB
 
                   # This stores the decimal values of all substrings into memory
                   StoreValue2:
-                  #lw $t2, 4($sp)                    # Load $t2 with the decimal value
+                  # Load value from stack byte-by-byte to prevent misalignment in stack.
                   lbu $t2, 0($sp)
                   sll $t2, $t2, 8
                   lbu $t1, 1($sp)
@@ -186,8 +183,8 @@
 
                   # This loop loads the decimal values into the stack
                   LoadStack:
-                  #add $t2, $t2, 4
-                  lw $t0, dec_array($t1)
+                  lw $t0, dec_array($t1)              # Load word from array into $t0
+                  # Store decimal value in stack byte-by-byte to prevent misalignment.
                   sub $sp, $sp, 4
                   sb $t0, 3($sp)
                   srl $t0, $t0, 8
@@ -196,32 +193,12 @@
                   sb $t0, 1($sp)
                   srl $t0, $t0, 8
                   sb $t0, 0($sp)
-                  #sw $t0, 0($sp)
-                  #sub $sp, $sp, 4
-
-                  #lbu $t0, 0($sp)
-                  #sll $t0, $t0, 8
-                  #lbu $s0, 1($sp)
-                  #or $t0, $t0, $s0
-                  #sll $t0, $t0, 8
-                  #lbu $s0, 2($sp)
-                  #or $t0, $t0, $s0
-                  #sll $t0, $t0, 8
-                  #lbu $s0, 3($sp)
-                  #or $t0, $t0, $s0
-
-                  #or $a0, $t0, 0
-                  #li $v0, 1
-                  #syscall
-
                   add $t1, $t1, 4
                   beq $t1, $t9, JumpToMain
                   j LoadStack
 
                   JumpToMain:
                   jr $t4
-
-
 
         # SubProgramB processes each substring that is on the stack. It returns the decimal value of a valid substring or a value of -1 if substring is invalud
         SubProgramB:
@@ -236,8 +213,6 @@
                   Loop4:
                         #add $t1, $t5, $zero                 # Get the current character's address
                         lb $t2, 0($t5)                       # Load register $t2 with the current character
-                        #beq $t2, $s1, PrintInvalid          # If current char is the null char, the string is empty. Therefore, invalid
-                        #beq $t2, $s2, PrintInvalid          # If current char is the newline char, the string is empty. Therefore, invalid
                         bne $t2, $s3, CheckTab               # If the current char is not a space character, go to subroutine to check if it's a tab
                         beq $t5, $sp, InvalidSubstr          # If current $t5 is at $sp then all chars are spaces/tabs. Go to InvalidSubstr
                         addi $t5, $t5, -1                    # If the current char is a space, increment $t5 in stack to check next character
@@ -310,8 +285,9 @@
 
                   # Return -1 if the substring is invalid
                   InvalidSubstr:
-                  addi $s7, $zero, 255                       # Load $s7 with -1 if substring is invalid
+                  addi $s7, $zero, 255                       # Load $s7 with 255 if substring is invalid
                   add $sp, $t5, $zero                       # Move $sp to start of substring to unload substring from stack
+                  # Store decimal value in stack byte by byte to prevent misalignment.
                   sub $sp, $sp, 4
                   sb $s7, 3($sp)
                   srl $s7, $s7, 8
@@ -328,6 +304,7 @@
                   DecimalValue:
                   add $s7, $s7, $zero                       # The sum in the $s7 register is the decimal value
                   add $sp, $t5, $zero                       # Move $sp to start of substring to unload substring from stack
+                  # Store decimal value in stack byte-by-byte to prevent misalignment.
                   sub $sp, $sp, 4
                   sb $s7, 3($sp)
                   srl $s7, $s7, 8
@@ -336,18 +313,6 @@
                   sb $s7, 1($sp)
                   srl $s7, $s7, 8
                   sb $s7, 0($sp)
-                  #sb $s7, 0($sp)
-                  #srl $s7, $s7, 8
-                  #add $sp, $sp, -1
-                  #sb $s7, 0($sp)
-                  #srl $s7, $s7, 8
-                  #add $sp, $sp, -1
-                  #sb $s7, 0($sp)
-                  #srl $s7, $s7, 8
-                  #add $sp, $sp, -1
-                  #sb $s7, 0($sp)
-                  #sw $s7, 0($sp)                            # Store decimal value of the substring to the stack
-                  #sub $sp, $sp, 4                           # Move $sp to validate other bytes in the word
                   jr $t8                                    # Return to SubprogramA
 
 
